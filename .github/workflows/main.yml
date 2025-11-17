@@ -1,9 +1,3 @@
-Workflow para rodar o bot de apostas manualmente através da interface do GitHub.
-
-name: 🤖 Executar Bot (Manual)
-
-Define o gatilho: 'workflow_dispatch' permite execução manual.
-
 on:
 workflow_dispatch:
 
