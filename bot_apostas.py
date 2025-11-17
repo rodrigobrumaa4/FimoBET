@@ -324,7 +324,7 @@ def executar_analise():
 
 
 # =================================================================
-# 4. EXECUÇÃO E AGENDAMENTO
+# 4. EXECUÇÃO E AGENDAMENTO (Adaptado para Render e GitHub Actions)
 # =================================================================
 
 def main():
@@ -333,8 +333,19 @@ def main():
     """
     print("Bot de Análises de Apostas iniciado.")
     
+    # -----------------------------------------------------------------
+    # NOVO: Se a variável SINGLE_RUN for 'true', roda uma vez e encerra.
+    # Esta variável é injetada pelo GitHub Actions no workflow 'run_bot_manual.yml'
+    if os.environ.get("SINGLE_RUN") == "true":
+        print("Modo de execução única detectado (GitHub Actions). Rodando análise e encerrando.")
+        executar_analise()
+        return
+    # -----------------------------------------------------------------
+        
+    # MODO PADRÃO (Ideal para Render: Roda em loop para agendar o horário)
+    print("Modo de execução agendada (contínua) detectado (Ideal para Render).")
+    
     # Agendar a execução da função de análise todos os dias
-    # O bot rodará uma vez por dia às 09:00 (ajuste o horário que preferir)
     schedule.every().day.at("09:00").do(executar_analise)
     
     # Executa a análise imediatamente ao iniciar (para teste)
