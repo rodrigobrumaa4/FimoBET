@@ -1,1 +1,4 @@
-requests pandas scipy schedule
+requests
+pandas
+scipy
+schedule
