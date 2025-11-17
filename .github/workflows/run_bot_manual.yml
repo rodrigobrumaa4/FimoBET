@@ -1,17 +1,4 @@
-Workflow para rodar o bot de apostas manualmente através da interface do GitHub.
-
-name: 🤖 Executar Bot (Manual)
-
-Define o gatilho: 'workflow_dispatch' permite execução manual.
-
-on:
-workflow_dispatch:
-
-jobs:
-run_python_script:
-runs-on: ubuntu-latest
-
-steps:
+Workflow para rodar o bot de apostas manualmente através da interface do GitHub.name: 🤖 Executar Bot (Manual)Define o gatilho: 'workflow_dispatch' permite execução manual.on:workflow_dispatch:jobs:run_python_script:runs-on: ubuntu-lateststeps:
   # 1. Checa o código do repositório
   - name: Checkout Code
     uses: actions/checkout@v4
