@@ -1,38 +1,32 @@
-Workflow para rodar o bot de apostas manualmente através da interface do GitHub.
-
-name: 🤖 Executar Bot (Manual)
-
-Define o gatilho: 'workflow_dispatch' permite execução manual.
+name: "🤖 Executar Bot (Manual)"
 
 on:
-workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
-run_python_script:
-runs-on: ubuntu-latest
+  run_python_script:
+    runs-on: ubuntu-latest
 
-steps:
-  # 1. Checa o código do repositório
-  - name: Checkout Code
-    uses: actions/checkout@v4
+    steps:
+      # 1. Checa o código do repositório
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-  # 2. Configura o ambiente Python
-  - name: Set up Python
-    uses: actions/setup-python@v4
-    with:
-      python-version: '3.x'
+      # 2. Configura o ambiente Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
 
-  # 3. Instala as dependências (do arquivo requirements.txt)
-  - name: Install dependencies
-    run: pip install -r requirements.txt
+      # 3. Instala dependências
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
-  # 4. Executa o script Python
-  # O parâmetro 'env' passa as chaves de segurança (Secrets) e ativa
-  # o modo de execução única (SINGLE_RUN=true) no seu bot_apostas.py.
-  - name: Run Betting Bot Script
-    env:
-      API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      SINGLE_RUN: "true" # Diz ao script para rodar uma vez e sair
-    run: python bot_apostas.py
+      # 4. Executa o bot
+      - name: Run Betting Bot Script
+        env:
+          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SINGLE_RUN: "true"
+        run: python bot_apostas.py
