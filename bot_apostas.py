@@ -35,7 +35,7 @@ LIGAS_ALVO = {
 # Temporada atual que você deseja analisar
 # IMPORTANTE: Sempre use o ano de início da temporada (ex: 2024 para 2024/2025)
 # Note: Se a temporada de 2025 ainda não tiver jogos finalizados, a análise falhará.
-SEASON_YEAR = 2024 
+SEASON_YEAR = 2025 
 
 # =================================================================
 # 2. FUNÇÕES DE CÁLCULO E ESTATÍSTICAS (MÉTODO POISSON)
