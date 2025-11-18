@@ -32,11 +32,12 @@ LIGAS_ALVO = {
     135: "Serie A (Itália)",
     71: "Brasileirão Série A (Brasil)"
 }
-# Temporada atual que você deseja analisar
-# IMPORTANTE PARA TESTE: Mantendo 2024, pois os dados dessa temporada
-# já estão 100% disponíveis na API, o que ajuda a isolar problemas de chave/limite.
-SEASON_YEAR = 2024 
 
+# --- CORREÇÃO DE LÓGICA DE SAZONALIDADE ---
+# 1. Temporada para calcular as Forças de Ataque/Defesa (DEVE SER uma temporada com jogos Finalizados, geralmente a anterior)
+METRICS_SEASON_YEAR = 2024
+# 2. Temporada para buscar os jogos futuros
+CURRENT_SEASON_YEAR = 2025 
 # =================================================================
 # 2. FUNÇÕES DE CÁLCULO E ESTATÍSTICAS (MÉTODO POISSON)
 # =================================================================
@@ -214,21 +215,20 @@ def _processar_fixtures_para_metricas(fixtures):
 
 def calcular_metricas_liga_e_forcas(api_key, league_id, season_year):
     """
-    Busca os dados da API-Football e calcula as Forças de Ataque e Defesa (FA/FD).
+    Busca os dados da API-Football (da TEMPORADA ANTERIOR) e calcula as Forças de Ataque e Defesa (FA/FD).
     """
-    print(f"Buscando histórico de jogos (FT) para a Liga ID {league_id} na temporada {season_year}...")
+    print(f"Buscando histórico de jogos (FT) para a Liga ID {league_id} na temporada {season_year} (MÉTRICAS)...")
 
     params = {
         'league': league_id,
         'season': season_year,
         'status': 'FT' # Apenas jogos Finalizados (Full Time)
-        # Atenção: a API-Football usa paginação. Para ligas grandes, pode ser necessário um loop para buscar todas as páginas.
-        # Estamos assumindo que os resultados de uma temporada cabem em uma única página para simplificar o código.
     }
     
     api_response = _chamar_api("fixtures", params)
     
     if not api_response:
+        # Retorna valores padrões caso a API não responda
         return {
             'liga_media_home': 1.5, 
             'liga_media_away': 1.2, 
@@ -253,7 +253,7 @@ def calcular_metricas_liga_e_forcas(api_key, league_id, season_year):
     }
 
 
-def buscar_fixtures_futuros(api_key, league_id):
+def buscar_fixtures_futuros(api_key, league_id, season_year):
     """
     Busca jogos futuros na liga especificada (até D+15) usando a API-Football.
     """
@@ -265,15 +265,12 @@ def buscar_fixtures_futuros(api_key, league_id):
     # Parâmetros para buscar fixtures futuros
     params = {
         'league': league_id,
-        'season': SEASON_YEAR,
+        'season': season_year, # Usa a temporada ATUAL (2025)
         'from': data_hoje,
         'to': data_limite
-        # IMPORTANTE: As odds (probabilidades de mercado) não vêm neste endpoint. 
-        # Buscar odds requer um endpoint separado (/odds) e uma chamada para cada jogo. 
-        # Continuaremos MOCANDO as odds para evitar milhares de chamadas à API.
     }
     
-    print(f"Buscando jogos futuros ({data_hoje} até {data_limite}) para a Liga ID {league_id}...")
+    print(f"Buscando jogos futuros ({data_hoje} até {data_limite}) para a Liga ID {league_id} (JOGOS)...")
     
     api_response = _chamar_api("fixtures", params)
     
@@ -301,7 +298,7 @@ def buscar_fixtures_futuros(api_key, league_id):
             })
             
     if not fixtures_reais:
-        print(f"AVISO: A API-Football não retornou jogos futuros para a Liga ID {league_id}. Verifique a SEASON_YEAR.")
+        print(f"AVISO: A API-Football não retornou jogos futuros para a Liga ID {league_id} na temporada {season_year}.")
         
     return fixtures_reais
 
@@ -319,7 +316,9 @@ def analisar_jogo(jogo, liga_data):
 
     # Garante que as métricas (FA/FD) foram calculadas
     if home_id not in metrics or away_id not in metrics:
-        print(f"AVISO: Métricas FA/FD não calculadas ou insuficientes para {home_name} ({home_id}) vs {away_name} ({away_id}). Pulando.")
+        # Isso significa que o time não estava na temporada 2024 para cálculo de métricas (Ex: time recém-promovido)
+        # Nesses casos, o cálculo falha.
+        print(f"AVISO: Métricas FA/FD não calculadas ou insuficientes para {home_name} ({home_id}) vs {away_name} ({away_id}). Time não estava na temporada de METRICS_SEASON_YEAR={METRICS_SEASON_YEAR}. Pulando.")
         return None 
 
     avg_home = liga_data['liga_media_home']
@@ -435,7 +434,7 @@ def executar_analise():
         print("ERRO: API-Football Key não configurada (Variável de Ambiente 'API_FOOTBALL_KEY').")
         return
         
-    # A data limite agora é D+15, e o texto da mensagem foi atualizado
+    # Data limite agora é D+15
     data_limite = (datetime.now() + timedelta(days=15)).strftime('%d/%m')
     mensagem_final = [f"📊 *ANÁLISES PARA OS PRÓXIMOS 15 DIAS* (Até {data_limite})"]
     total_apostas = 0
@@ -444,8 +443,8 @@ def executar_analise():
         print(f"\nProcessando: {league_name} (ID: {league_id})")
 
         try:
-            # AGORA CHAMA A FUNÇÃO QUE BUSCA OS DADOS REAIS DE JOGOS FINALIZADOS E CALCULA AS MÉTRICAS
-            liga_data = calcular_metricas_liga_e_forcas(API_KEY, league_id, SEASON_YEAR)
+            # 1. BUSCA DE MÉTRICAS (Usa a temporada ANTERIOR: 2024)
+            liga_data = calcular_metricas_liga_e_forcas(API_KEY, league_id, METRICS_SEASON_YEAR)
             team_metrics = liga_data.get('team_metrics')
             
             if not team_metrics:
@@ -457,8 +456,8 @@ def executar_analise():
             continue
 
         try:
-            # Busca os fixtures futuros (agora com janela de 15 dias)
-            fixtures = buscar_fixtures_futuros(API_KEY, league_id)
+            # 2. BUSCA DE FIXTURES (Usa a temporada ATUAL: 2025)
+            fixtures = buscar_fixtures_futuros(API_KEY, league_id, CURRENT_SEASON_YEAR)
         except Exception as e:
             print(f"ERRO ao buscar fixtures de {league_name}: {e}")
             continue
