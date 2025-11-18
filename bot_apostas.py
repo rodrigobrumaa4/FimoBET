@@ -33,9 +33,9 @@ LIGAS_ALVO = {
     71: "Brasileirão Série A (Brasil)"
 }
 # Temporada atual que você deseja analisar
-# IMPORTANTE: Sempre use o ano de início da temporada (ex: 2024 para 2024/2025)
-# Note: Se a temporada de 2025 ainda não tiver jogos finalizados, a análise falhará.
-SEASON_YEAR = 2025 
+# IMPORTANTE PARA TESTE: Mantendo 2024, pois os dados dessa temporada
+# já estão 100% disponíveis na API, o que ajuda a isolar problemas de chave/limite.
+SEASON_YEAR = 2024 
 
 # =================================================================
 # 2. FUNÇÕES DE CÁLCULO E ESTATÍSTICAS (MÉTODO POISSON)
@@ -62,6 +62,7 @@ def _chamar_api(endpoint, params):
             return data['response']
         else:
             print(f"AVISO: Nenhuma resposta válida da API para {endpoint} com params {params}.")
+            # Note: Este aviso é comum se o limite de requisições foi atingido ou a chave está inativa.
             return None
             
     except requests.exceptions.HTTPError as e:
@@ -254,12 +255,12 @@ def calcular_metricas_liga_e_forcas(api_key, league_id, season_year):
 
 def buscar_fixtures_futuros(api_key, league_id):
     """
-    Busca jogos futuros na liga especificada (até D+2) usando a API-Football.
+    Busca jogos futuros na liga especificada (até D+15) usando a API-Football.
     """
     
-    # Define o intervalo de datas: Hoje até D+2 (incluído)
+    # Define o intervalo de datas: Hoje até D+15 (incluído)
     data_hoje = datetime.now().strftime('%Y-%m-%d')
-    data_limite = (datetime.now() + timedelta(days=2)).strftime('%Y-%m-%d')
+    data_limite = (datetime.now() + timedelta(days=15)).strftime('%Y-%m-%d')
     
     # Parâmetros para buscar fixtures futuros
     params = {
@@ -434,8 +435,9 @@ def executar_analise():
         print("ERRO: API-Football Key não configurada (Variável de Ambiente 'API_FOOTBALL_KEY').")
         return
         
-    data_limite = (datetime.now() + timedelta(days=2)).strftime('%d/%m')
-    mensagem_final = [f"📊 *ANÁLISES PARA OS PRÓXIMOS 2 DIAS* (Até {data_limite})"]
+    # A data limite agora é D+15, e o texto da mensagem foi atualizado
+    data_limite = (datetime.now() + timedelta(days=15)).strftime('%d/%m')
+    mensagem_final = [f"📊 *ANÁLISES PARA OS PRÓXIMOS 15 DIAS* (Até {data_limite})"]
     total_apostas = 0
 
     for league_id, league_name in LIGAS_ALVO.items():
@@ -455,7 +457,7 @@ def executar_analise():
             continue
 
         try:
-            # Busca os fixtures futuros
+            # Busca os fixtures futuros (agora com janela de 15 dias)
             fixtures = buscar_fixtures_futuros(API_KEY, league_id)
         except Exception as e:
             print(f"ERRO ao buscar fixtures de {league_name}: {e}")
